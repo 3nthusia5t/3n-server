@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "./backend/model";
+
+message ArticleList {
+    repeated Article listOfArticles = 1;
+}
+
+
+message Article {
+    string uuid = 1;
+    string title = 2;
+    string url = 3;
+    string tags = 4;
+}

@@ -1,0 +1,7 @@
+0 */2 * * * /app/3n-server/utils/cron/routine.sh
+
+0 10 * * * /app/3n-server/utils/scripts/update.sh
+
+0 15 * * * /app/3n-server/utils/scripts/update.sh
+
+0 20 * * * /app/3n-server/utils/scripts/update.sh
