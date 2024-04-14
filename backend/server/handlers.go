@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func GetChosenArticleHandler(db *sqlite.LocalDB) func(w http.ResponseWriter, r *http.Request) {
+func GetChosenArticleHandler(db *sqlite.DbManager) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 

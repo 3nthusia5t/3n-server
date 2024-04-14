@@ -9,9 +9,9 @@ import (
 
 func TestQueryRow(t *testing.T) {
 
-	localDb := Init("../database.db")
+	DbManager := Init("../database.db")
 
-	url, err := localDb.GetArticlePath("1")
+	url, err := DbManager.GetArticlePath("1")
 	if err != nil {
 		fmt.Println(err)
 	}

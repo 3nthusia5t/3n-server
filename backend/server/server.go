@@ -15,11 +15,11 @@ var l = log.Logger.With().Str("component", "server").Logger()
 // GLOBAL VARS
 var gArticles []article.Article
 
-func LoadArticlesToMemory(localDb *sqlite.LocalDB) {
+func LoadArticlesToMemory(DbManager *sqlite.DbManager) {
 	for true {
 		time.Sleep(30 * time.Minute)
 		var err error
-		gArticles, err = localDb.GetArticles()
+		gArticles, err = DbManager.GetArticles()
 		if err != nil {
 			l.Warn().Err(err)
 			continue
@@ -46,16 +46,16 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 	}
 
 	//initialize the database
-	localDb := sqlite.Init(databasePath)
-	if localDb == nil {
+	DbManager := sqlite.Init(databasePath)
+	if DbManager == nil {
 		l.Fatal().Msg("Failed to initialize the database")
 	} else {
 		l.Info().Msg("Successfully initialized the database")
 	}
 
 	var err error
-	gArticles, err = localDb.GetArticles()
-	go LoadArticlesToMemory(localDb)
+	gArticles, err = DbManager.GetArticles()
+	go LoadArticlesToMemory(DbManager)
 	if err != nil {
 		l.Err(err)
 	}
@@ -68,7 +68,7 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 
 	//Handling API calls
 	http.HandleFunc("/GetAllArticles", GetAllArticlesHandler)
-	http.HandleFunc("/GetChosenArticle", GetChosenArticleHandler(localDb))
+	http.HandleFunc("/GetChosenArticle", GetChosenArticleHandler(DbManager))
 
 	//Starting the server
 	l.Err(http.ListenAndServeTLS(":https", tlsCertPath, tlsKeyPath, nil))
@@ -81,14 +81,14 @@ func UpdateApp(articleContentPath string, databasePath string) {
 	if err != nil {
 		l.Error().Msg(err.Error())
 	}
-	localDb := sqlite.Init(databasePath)
+	DbManager := sqlite.Init(databasePath)
 
 	for _, a := range al {
-		print(localDb.IfUrlExist(a))
-		if localDb.IfUrlExist(a) {
-			localDb.UpdateRecord(a.Title, a.Url, article.TagsToCsv(a.Tags))
+		print(DbManager.IfUrlExist(a))
+		if DbManager.IfUrlExist(a) {
+			DbManager.UpdateRecord(a.Title, a.Url, article.TagsToCsv(a.Tags))
 		} else {
-			localDb.CreateRecord(a.Title, a.Url, article.TagsToCsv(a.Tags))
+			DbManager.CreateRecord(a.Title, a.Url, article.TagsToCsv(a.Tags))
 		}
 	}
 

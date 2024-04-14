@@ -12,14 +12,12 @@ import (
 
 var l = log.Logger
 
-type LocalDB struct {
+type DbManager struct {
 	db   *sql.DB
 	path string
 }
 
-//func
-
-func Init(filepath string) *LocalDB {
+func Init(filepath string) *DbManager {
 	db, err := sql.Open("sqlite", filepath)
 	if err != nil {
 		fmt.Println("Error opening database:", err)
@@ -32,22 +30,27 @@ func Init(filepath string) *LocalDB {
 			id TEXT PRIMARY KEY,
 			title TEXT NOT NULL,
 			url TEXT NOT NULL,
-			tags TEXT
+			tags TEXT,
+			friendly_url TEXT,
+			creation_timestamp TEXT,
+			edit_timestamp TEXT,
+			description TEXT,
 		);
 	`
 	_, err = db.Exec(createTableSQL)
+
 	if err != nil {
 		l.Err(err)
 		return nil
 	}
 	l.Debug().Msg("Database table has been created.")
-	return &LocalDB{
+	return &DbManager{
 		db:   db,
 		path: filepath,
 	}
 }
 
-func (db *LocalDB) GetArticlePath(uuid string) (string, error) {
+func (db *DbManager) GetArticlePath(uuid string) (string, error) {
 
 	row := db.db.QueryRow("SELECT url FROM articles WHERE id == ? LIMIT 1", uuid)
 	l.Debug().Msg("Querying database for article path based on id property. [GetArticlePath]")
@@ -61,7 +64,7 @@ func (db *LocalDB) GetArticlePath(uuid string) (string, error) {
 	return url, nil
 }
 
-func (db *LocalDB) GetArticles() ([]article.Article, error) {
+func (db *DbManager) GetArticles() ([]article.Article, error) {
 
 	var articles []article.Article
 
@@ -84,7 +87,7 @@ func (db *LocalDB) GetArticles() ([]article.Article, error) {
 	return articles, nil
 }
 
-func (db *LocalDB) IfUrlExist(a article.Article) bool {
+func (db *DbManager) IfUrlExist(a article.Article) bool {
 	row := db.db.QueryRow("SELECT * FROM articles WHERE url == ?", a.Url)
 	l.Debug().Msg("Querying database to check if url exists in any row. [IfUrlExist]")
 	var box string
@@ -97,7 +100,7 @@ func (db *LocalDB) IfUrlExist(a article.Article) bool {
 	return true
 }
 
-func (db *LocalDB) IfRowExist(a article.Article) bool {
+func (db *DbManager) IfRowExist(a article.Article) bool {
 	row := db.db.QueryRow("SELECT * FROM articles WHERE id == ?", a.Uuid)
 	l.Debug().Msg("Querying database to check if row exists. [IfRowExist]")
 	var dst article.Article
@@ -113,7 +116,7 @@ func (db *LocalDB) IfRowExist(a article.Article) bool {
 	return false
 }
 
-func (db *LocalDB) UpdateRecord(title string, url string, tags string) error {
+func (db *DbManager) UpdateRecord(title string, url string, tags string) error {
 
 	row := db.db.QueryRow("SELECT id FROM articles WHERE url == ?", url)
 	l.Debug().Msg("Querying database to check if url exists in any row. [IfUrlExist]")
@@ -148,7 +151,7 @@ func (db *LocalDB) UpdateRecord(title string, url string, tags string) error {
 	return nil
 }
 
-func (db *LocalDB) CreateRecord(title string, url string, tags string) error {
+func (db *DbManager) CreateRecord(title string, url string, tags string) error {
 	id, err := uuid.NewV6()
 	if err != nil {
 		return err
