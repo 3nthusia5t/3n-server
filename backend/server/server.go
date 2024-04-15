@@ -16,7 +16,7 @@ var l = log.Logger.With().Str("component", "server").Logger()
 var gArticles []article.Article
 
 func LoadArticlesToMemory(DbManager *sqlite.DbManager) {
-	for true {
+	for {
 		time.Sleep(30 * time.Minute)
 		var err error
 		gArticles, err = DbManager.GetArticles()
@@ -49,6 +49,7 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 	DbManager := sqlite.Init(databasePath)
 	if DbManager == nil {
 		l.Fatal().Msg("Failed to initialize the database")
+
 	} else {
 		l.Info().Msg("Successfully initialized the database")
 	}
@@ -103,6 +104,15 @@ func TranscompileApp(srcContentPath string, dstContentPath string) {
 	if err != nil {
 		l.Err(err)
 	}
+}
+
+func redirectToHTTPS(w http.ResponseWriter, r *http.Request) {
+	// Get the host and requested URL path
+	host := r.Host
+	url := "https://" + host + r.URL.Path
+
+	// Redirect to the HTTPS version
+	http.Redirect(w, r, url, http.StatusMovedPermanently)
 }
 
 func Test(staticContentPath string, imagesContentPath string, externalContentPath string) {

@@ -25,7 +25,7 @@ func GetChosenArticleHandler(db *sqlite.DbManager) func(w http.ResponseWriter, r
 
 		if r.Method != "POST" {
 			http.Error(w, "Bad method", http.StatusBadRequest)
-			l.Err(fmt.Errorf("The request had wrong method %s", r.Method))
+			l.Err(fmt.Errorf("the request had wrong method %s", r.Method))
 			return
 		}
 
@@ -58,8 +58,8 @@ func GetChosenArticleHandler(db *sqlite.DbManager) func(w http.ResponseWriter, r
 }
 
 func GetAllArticlesHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "*")
+	//w.Header().Set("Access-Control-Allow-Origin", "*")
+	//w.Header().Set("Access-Control-Allow-Headers", "*")
 
 	msg, err := SerializeArticles(gArticles)
 	if err != nil {
@@ -77,7 +77,7 @@ func GetAllArticlesHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "GET" {
 		http.Error(w, "Wrong method", http.StatusMethodNotAllowed)
-		l.Err(fmt.Errorf("Request from IP %s has wrong method.", r.RemoteAddr))
+		l.Err(fmt.Errorf("request from IP %s has wrong method", r.RemoteAddr))
 		return
 	}
 

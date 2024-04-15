@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"backend/sqlite"
 	"fmt"
 	"testing"
 
@@ -9,7 +10,7 @@ import (
 
 func TestQueryRow(t *testing.T) {
 
-	DbManager := Init("../database.db")
+	DbManager := sqlite.Init("../database.db")
 
 	url, err := DbManager.GetArticlePath("1")
 	if err != nil {
