@@ -10,7 +10,7 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-var l = log.Logger
+var l = log.Logger.With().Str("component", "sqlite").Logger()
 
 type DbManager struct {
 	db   *sql.DB
@@ -32,9 +32,11 @@ func Init(filepath string) *DbManager {
 			url TEXT NOT NULL,
 			tags TEXT,
 			friendly_url TEXT,
-			creation_timestamp TEXT,
-			edit_timestamp TEXT,
-			description TEXT,
+			creation_timestamp INTEGER,
+			edit_timestamp INTEGER,
+			meta_description TEXT,
+			published INTEGER,
+			integrity_hash TEXT
 		);
 	`
 	_, err = db.Exec(createTableSQL)
@@ -43,7 +45,9 @@ func Init(filepath string) *DbManager {
 		l.Err(err)
 		return nil
 	}
+
 	l.Debug().Msg("Database table has been created.")
+
 	return &DbManager{
 		db:   db,
 		path: filepath,
@@ -64,21 +68,29 @@ func (db *DbManager) GetArticlePath(uuid string) (string, error) {
 	return url, nil
 }
 
-func (db *DbManager) GetArticles() ([]article.Article, error) {
-
-	var articles []article.Article
+// adjusted to the new database
+func (db *DbManager) GetArticles() ([]*article.Article, error) {
+	var articles []*article.Article
 
 	rows, err := db.db.Query("SELECT * FROM articles")
 	for rows.Next() {
 
-		var title, url, uuid string
-		var tags string
-		if err := rows.Scan(&uuid, &title, &url,
-			&tags); err != nil {
+		var title, url, uuid, friendlyUrl, tags string
+		var creationTimestamp uint64
+		var editTimestamp *uint64
+		var metaDescription *string
+		var published bool
+		if err := rows.Scan(&uuid, &title, &url, &tags, &friendlyUrl, &creationTimestamp, &editTimestamp, &metaDescription); err != nil {
 			return nil, err
 		}
 
-		articles = append(articles, article.New(uuid, title, url, article.CsvToTags(tags)))
+		a := article.NewFromScratch(uuid, title, url, article.CsvToTags(tags), friendlyUrl, creationTimestamp, editTimestamp, metaDescription, published)
+		if a != nil {
+			l.Warn().Msg("Failed to create new article. Most likely due to UUID error. The article will be omitted")
+			continue
+		}
+
+		articles = append(articles, a)
 		if err != nil {
 			return nil, err
 		}
@@ -100,6 +112,7 @@ func (db *DbManager) IfUrlExist(a article.Article) bool {
 	return true
 }
 
+// Handles user input
 func (db *DbManager) IfRowExist(a article.Article) bool {
 	row := db.db.QueryRow("SELECT * FROM articles WHERE id == ?", a.Uuid)
 	l.Debug().Msg("Querying database to check if row exists. [IfRowExist]")

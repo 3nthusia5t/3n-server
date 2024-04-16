@@ -10,10 +10,9 @@ import (
 	"time"
 )
 
-var l = log.Logger.With().Str("component", "server").Logger()
-
 // GLOBAL VARS
-var gArticles []article.Article
+var l = log.Logger.With().Str("component", "server").Logger()
+var gArticles []*article.Article
 
 func LoadArticlesToMemory(DbManager *sqlite.DbManager) {
 	for {

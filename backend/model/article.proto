@@ -2,14 +2,19 @@ syntax = "proto3";
 
 option go_package = "./backend/model";
 
-message ArticleList {
+message Articles {
     repeated Article listOfArticles = 1;
 }
-
 
 message Article {
     string uuid = 1;
     string title = 2;
     string url = 3;
     string tags = 4;
+    string friendly_url = 5;
+    int64 creation_timestamp = 6;
+    optional int64 edit_timestamp = 7;
+    optional string meta_description = 8;
+    bool published = 9;
+    string integrity_hash = 10;
 }

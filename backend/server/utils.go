@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func SerializeArticles(articles []article.Article) ([]byte, error) {
+func SerializeArticles(articles []*article.Article) ([]byte, error) {
 	var serializedMessage []byte
 	var protoArticles []*model.Article
 	for _, elem := range articles {
@@ -26,7 +26,7 @@ func SerializeArticles(articles []article.Article) ([]byte, error) {
 		protoArticles = append(protoArticles, article)
 	}
 
-	pbArticleList := &model.ArticleList{
+	pbArticleList := &model.Articles{
 		ListOfArticles: protoArticles,
 	}
 	msgBuff, err := proto.Marshal(pbArticleList)
@@ -193,6 +193,9 @@ func EnumerateArticles(path string) ([]article.Article, error) {
 
 			var res meta
 			err = json.Unmarshal(content, &res)
+			if err != nil {
+				return err
+			}
 			l.Debug().Msg(dirName)
 			res.Path, err = findFileByExtensionInDir(dirName, "html")
 			l.Debug().Msg(res.Path)
