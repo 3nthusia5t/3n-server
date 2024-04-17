@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/gofrs/uuid"
 )
@@ -26,14 +25,14 @@ type Article struct {
 	IntegrityHash     string
 }
 
-func New(title string, url string, tags []string, friendlyUrl string, metaDescription string, published bool) *Article {
+func New(title string, url string, tags []string, friendlyUrl string, creationTimestamp uint64, metaDescription string, published bool) *Article {
 	id, err := uuid.NewV6()
 	if err != nil {
 		l.Error().Msg(fmt.Sprintf("Error creating new article [NewArticle]: %s", err))
 		return nil
 	}
 
-	var editTimestamp uint64 = uint64(time.Now().Unix())
+	var editTimestamp uint64 = creationTimestamp
 
 	return &Article{
 		Uuid:              id.String(),
@@ -41,7 +40,7 @@ func New(title string, url string, tags []string, friendlyUrl string, metaDescri
 		Url:               url,
 		Tags:              tags,
 		FriendlyUrl:       friendlyUrl,
-		CreationTimestamp: uint64(time.Now().Unix()),
+		CreationTimestamp: creationTimestamp,
 		EditTimestamp:     &editTimestamp,
 		MetaDescription:   &metaDescription,
 		Published:         published,
@@ -61,29 +60,42 @@ func NewFromScratch(uuid string, title string, url string, tags []string, friend
 		Published:         published,
 	}
 
+	//Assings article integrity hash
 	tmp.CalculateArticleIntegrityHash()
 
 	return tmp
 }
 
-func (a Article) CalculateArticleIntegrityHash() {
-	editTime := ""
+// The hash is calculated from a
+func (a *Article) CalculateArticleIntegrityHash() {
 	metaDescription := ""
-	if a.EditTimestamp != nil {
-		editTime = fmt.Sprint(*a.EditTimestamp)
-	}
 
 	if a.MetaDescription != nil {
 		metaDescription = *a.MetaDescription
 	}
 
-	data := a.Uuid + a.Title + a.Url + a.FriendlyUrl + fmt.Sprint(a.CreationTimestamp) + string(editTime) + string(metaDescription)
+	data := a.Uuid + a.Title + a.Url + a.FriendlyUrl + fmt.Sprint(a.CreationTimestamp) + metaDescription
 
-	a.IntegrityHash = hex.EncodeToString(sha256.Sum256([]byte(data)))
+	sha256Sum := sha256.Sum256([]byte(data))
+
+	a.IntegrityHash = hex.EncodeToString(sha256Sum[:])
 }
 
-func (a Article) DebugPrint() {
-	fmt.Printf("%s, %s, %s", a.Uuid, a.Title, a.Url)
+func (a Article) TagsToCsv() string {
+	var CsvTags string
+	for i, tag := range a.Tags {
+		if i == len(a.Tags)-1 {
+			CsvTags += tag
+			continue
+		}
+		CsvTags += fmt.Sprintf("%s, ", tag)
+
+	}
+	return CsvTags
+}
+
+func (a Article) DebugPrint() string {
+	return fmt.Sprintf("%s, %s, %s", a.Uuid, a.Title, a.Url)
 
 }
 
@@ -113,17 +125,4 @@ func CsvToTags(CsvTags string) []string {
 		tags = append(tags, tag)
 	}
 	return tags
-}
-
-func TagsToCsv(tags []string) string {
-	var CsvTags string
-	for i, tag := range tags {
-		if i == len(tags)-1 {
-			CsvTags += tag
-			continue
-		}
-		CsvTags += fmt.Sprintf("%s, ", tag)
-
-	}
-	return CsvTags
 }

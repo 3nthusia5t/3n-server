@@ -84,11 +84,11 @@ func UpdateApp(articleContentPath string, databasePath string) {
 	DbManager := sqlite.Init(databasePath)
 
 	for _, a := range al {
-		print(DbManager.IfUrlExist(a))
-		if DbManager.IfUrlExist(a) {
-			DbManager.UpdateRecord(a.Title, a.Url, article.TagsToCsv(a.Tags))
+		if DbManager.IfUrlExist(*a) {
+			//EditTimestamp assignment inside the function
+			DbManager.UpdateRecord(a)
 		} else {
-			DbManager.CreateRecord(a.Title, a.Url, article.TagsToCsv(a.Tags))
+			DbManager.CreateRecord(*a)
 		}
 	}
 
