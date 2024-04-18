@@ -1,0 +1,8 @@
+{
+  "title": "Introduction to windows code signing",
+  "tags": ["security", "windows", "executables", "cryptography", "PKI"],
+  "friendly_url": "windows-code-signing",
+  "timestamp": -1,
+  "meta_description": "In-depth analysis of Authenticode policy on Windows operating system. Hands-on example for creating self-signed certificate.",
+  "pubished": 1
+}

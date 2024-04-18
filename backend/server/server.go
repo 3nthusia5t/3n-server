@@ -77,10 +77,11 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 func UpdateApp(articleContentPath string, databasePath string) {
 	//Enumarate articles and find new
 	al, err := EnumerateArticles(articleContentPath)
-	l.Debug().Msg(fmt.Sprint(al))
 	if err != nil {
 		l.Error().Msg(err.Error())
 	}
+	l.Debug().Msg(fmt.Sprintf("Successfully enumerated articles [UpdateApp]: %v", al))
+
 	DbManager := sqlite.Init(databasePath)
 
 	for _, a := range al {

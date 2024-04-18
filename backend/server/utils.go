@@ -191,17 +191,20 @@ func EnumerateArticles(path string) ([]*article.Article, error) {
 		if fileName == "metadata" {
 			content, err := Read(path)
 			if err != nil {
+				l.Error().Msg(fmt.Sprintf("Error reading file [EnumerateArticles]: %s", err.Error()))
 				return err
 			}
+			l.Debug().Msg(fmt.Sprintf("Successfully read file [EnumerateArticles]: %s", path))
 
 			var res meta
 			err = json.Unmarshal(content, &res)
 			if err != nil {
+				l.Error().Msg(fmt.Sprintf("Error unmarshaling JSON content [EnumerateArticles]: %s", err.Error()))
 				return err
 			}
-			l.Debug().Msg(dirName)
+			l.Debug().Msg(fmt.Sprintf("Successfully unmarshal JSON content [EnumerateArticles]: %v", res))
+
 			res.Path, err = findFileByExtensionInDir(dirName, "html")
-			l.Debug().Msg(res.Path)
 			if err != nil {
 				return err
 			}
@@ -218,7 +221,6 @@ func EnumerateArticles(path string) ([]*article.Article, error) {
 		a := article.New(metaItem.Title, metaItem.Path, metaItem.Tags, metaItem.FriendlyUrl, metaItem.CreationTimestamp, metaItem.MetaDescription, metaItem.Published)
 		al = append(al, a)
 	}
-	fmt.Println(al)
 
 	return al, nil
 }
