@@ -5,21 +5,19 @@ import (
 	"backend/log"
 	"database/sql"
 	"fmt"
+	"time"
 
 	_ "github.com/glebarez/go-sqlite"
-	"github.com/gofrs/uuid"
 )
 
-var l = log.Logger
+var l = log.Logger.With().Str("component", "sqlite").Logger()
 
-type LocalDB struct {
+type DbManager struct {
 	db   *sql.DB
 	path string
 }
 
-//func
-
-func Init(filepath string) *LocalDB {
+func Init(filepath string) *DbManager {
 	db, err := sql.Open("sqlite", filepath)
 	if err != nil {
 		fmt.Println("Error opening database:", err)
@@ -32,22 +30,31 @@ func Init(filepath string) *LocalDB {
 			id TEXT PRIMARY KEY,
 			title TEXT NOT NULL,
 			url TEXT NOT NULL,
-			tags TEXT
+			tags TEXT,
+			friendly_url TEXT,
+			creation_timestamp INTEGER,
+			edit_timestamp INTEGER,
+			meta_description TEXT,
+			published INTEGER,
+			integrity_hash TEXT
 		);
 	`
 	_, err = db.Exec(createTableSQL)
+
 	if err != nil {
 		l.Err(err)
 		return nil
 	}
+
 	l.Debug().Msg("Database table has been created.")
-	return &LocalDB{
+
+	return &DbManager{
 		db:   db,
 		path: filepath,
 	}
 }
 
-func (db *LocalDB) GetArticlePath(uuid string) (string, error) {
+func (db *DbManager) GetArticlePath(uuid string) (string, error) {
 
 	row := db.db.QueryRow("SELECT url FROM articles WHERE id == ? LIMIT 1", uuid)
 	l.Debug().Msg("Querying database for article path based on id property. [GetArticlePath]")
@@ -61,21 +68,29 @@ func (db *LocalDB) GetArticlePath(uuid string) (string, error) {
 	return url, nil
 }
 
-func (db *LocalDB) GetArticles() ([]article.Article, error) {
-
-	var articles []article.Article
+// adjusted to the new database
+func (db *DbManager) GetArticles() ([]*article.Article, error) {
+	var articles []*article.Article
 
 	rows, err := db.db.Query("SELECT * FROM articles")
 	for rows.Next() {
 
-		var title, url, uuid string
-		var tags string
-		if err := rows.Scan(&uuid, &title, &url,
-			&tags); err != nil {
+		var title, url, uuid, friendlyUrl, tags string
+		var creationTimestamp uint64
+		var editTimestamp *uint64
+		var metaDescription *string
+		var published bool
+		if err := rows.Scan(&uuid, &title, &url, &tags, &friendlyUrl, &creationTimestamp, &editTimestamp, &metaDescription); err != nil {
 			return nil, err
 		}
 
-		articles = append(articles, article.New(uuid, title, url, article.CsvToTags(tags)))
+		a := article.NewFromScratch(uuid, title, url, article.CsvToTags(tags), friendlyUrl, creationTimestamp, editTimestamp, metaDescription, published)
+		if a != nil {
+			l.Warn().Msg("Failed to create new article. Most likely due to UUID error. The article will be omitted")
+			continue
+		}
+
+		articles = append(articles, a)
 		if err != nil {
 			return nil, err
 		}
@@ -84,20 +99,30 @@ func (db *LocalDB) GetArticles() ([]article.Article, error) {
 	return articles, nil
 }
 
-func (db *LocalDB) IfUrlExist(a article.Article) bool {
-	row := db.db.QueryRow("SELECT * FROM articles WHERE url == ?", a.Url)
+func (db *DbManager) IfUrlExist(a article.Article) bool {
+	row := db.db.QueryRow("SELECT id, integrity_hash FROM articles WHERE url == ?", a.Url)
 	l.Debug().Msg("Querying database to check if url exists in any row. [IfUrlExist]")
-	var box string
 	var dst article.Article
-	err := row.Scan(&dst.Uuid, &dst.Title, &dst.Url, &box)
+	err := row.Scan(&dst.Uuid, &dst.IntegrityHash)
+
+	if a.IntegrityHash != dst.IntegrityHash {
+		l.Debug().Msg(fmt.Sprintf("Provided integrity hash %s, does not much the original one: %s", a.IntegrityHash, dst.IntegrityHash))
+		return false
+	}
+
 	if err != nil {
 		l.Debug().Msg(fmt.Sprintf("Error raised during scanning rows: %s. [IfUrlExist]", err.Error()))
 		return false
 	}
+
+	l.Debug().Msg("URL exists in the database.")
 	return true
 }
 
-func (db *LocalDB) IfRowExist(a article.Article) bool {
+// Unused
+// TODO:
+// Make it work with new schema.
+func (db *DbManager) IfRowExist(a article.Article) bool {
 	row := db.db.QueryRow("SELECT * FROM articles WHERE id == ?", a.Uuid)
 	l.Debug().Msg("Querying database to check if row exists. [IfRowExist]")
 	var dst article.Article
@@ -113,57 +138,97 @@ func (db *LocalDB) IfRowExist(a article.Article) bool {
 	return false
 }
 
-func (db *LocalDB) UpdateRecord(title string, url string, tags string) error {
+func (db *DbManager) UpdateRecord(a *article.Article) error {
 
-	row := db.db.QueryRow("SELECT id FROM articles WHERE url == ?", url)
-	l.Debug().Msg("Querying database to check if url exists in any row. [IfUrlExist]")
+	row := db.db.QueryRow("SELECT id FROM articles WHERE url == ?", a.Url)
+	l.Debug().Msg("Querying database to check if url exists in any row. [UpdateRecord]")
 	var uuid string
 	err := row.Scan(&uuid)
 	if err != nil {
-		l.Debug().Msg(fmt.Sprintf("Error raised during scanning rows: %s. [IfRowExist]", err.Error()))
+		l.Debug().Msg(fmt.Sprintf("Error raised during scanning rows: %s. [UpdateRecord]", err.Error()))
 		return err
 	}
+
+	updatedEditTimestamp := uint64(time.Now().Unix())
+	a.EditTimestamp = &updatedEditTimestamp
+
 	res, err := db.db.Exec(`
 	UPDATE articles
-	SET title = ?,
-		url = ?,
-		tags = ?
+	SET title = ?;
+		url = ?;
+		tags = ?;
+		friendly_url = ?;
+		creation_timestamp = ?;
+		edit_timestamp = ?;
+		meta_description = ?;
+		published = ?;
+		integrity_hash = ?
 	WHERE
 		id = ?`,
-		title,
-		url,
-		tags,
-		uuid,
+		a.Title,
+		a.Url,
+		a.TagsToCsv(),
+		a.FriendlyUrl,
+		a.CreationTimestamp,
+		a.EditTimestamp,
+		a.MetaDescription,
+		a.Published,
+		a.IntegrityHash,
+		a.Uuid,
 	)
 	if err != nil {
 		return err
 	}
-	l.Debug().Msg(fmt.Sprintf("Record was created. ID: %s, Title: %s, Url: %s, Tags: %s", uuid, title, url, tags))
+	l.Debug().Msg(fmt.Sprintf("Record was created: %s", a.DebugPrint()))
 	//The RowsAffected always return nil for error.
 	nAffected, _ := res.RowsAffected()
 	if nAffected > 1 {
-		l.Warn().Msg(fmt.Sprintf("More than 1 record was created. ID: %s, Title: %s, Url: %s, Tags: %s", uuid, title, url, tags))
+		l.Warn().Msg(fmt.Sprintf("More than 1 record was created: %s", a.DebugPrint()))
 	}
 
 	return nil
 }
 
-func (db *LocalDB) CreateRecord(title string, url string, tags string) error {
-	id, err := uuid.NewV6()
+// fix EnumerateArticles in utils.go before fixing this one.
+
+func (db *DbManager) CreateRecord(a article.Article) error {
+
+	result, err := db.db.Exec(`
+	INSERT INTO articles
+		(
+		id,
+		title,
+		url,
+		tags,
+		friendly_url,
+		creation_timestamp,
+		edit_timestamp,
+		meta_description,
+		published,
+		integrity_hash)
+		VALUES
+		(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		a.Uuid,
+		a.Title,
+		a.Url,
+		a.TagsToCsv(),
+		a.FriendlyUrl,
+		a.CreationTimestamp,
+		a.EditTimestamp,
+		a.MetaDescription,
+		a.Published,
+		a.IntegrityHash,
+	)
+
 	if err != nil {
 		return err
 	}
-	result, err := db.db.Exec(`INSERT INTO articles (id, title, url, tags)
-									VALUES
-									(?, ?, ? ,?)`, id, title, url, tags)
-	if err != nil {
-		return err
-	}
-	l.Debug().Msg(fmt.Sprintf("Record was created. ID: %s, Title: %s, Url: %s, Tags: %s", id, title, url, tags))
+	l.Debug().Msg(fmt.Sprintf("Record was created: %s", a.DebugPrint()))
+
 	//The RowsAffected always return nil for error.
 	res, _ := result.RowsAffected()
 	if res > 1 {
-		l.Warn().Msg(fmt.Sprintf("More than 1 record was created. ID: %s, Title: %s, Url: %s, Tags: %s", id, title, url, tags))
+		l.Warn().Msg(fmt.Sprintf("More than 1 record was created: %s", a.DebugPrint()))
 	}
 	return nil
 }

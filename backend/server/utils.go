@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func SerializeArticles(articles []article.Article) ([]byte, error) {
+func SerializeArticles(articles []*article.Article) ([]byte, error) {
 	var serializedMessage []byte
 	var protoArticles []*model.Article
 	for _, elem := range articles {
@@ -21,12 +21,12 @@ func SerializeArticles(articles []article.Article) ([]byte, error) {
 			Uuid:  elem.Uuid,
 			Title: elem.Title,
 			Url:   elem.Url,
-			Tags:  article.TagsToCsv(elem.Tags),
+			Tags:  elem.TagsToCsv(),
 		}
 		protoArticles = append(protoArticles, article)
 	}
 
-	pbArticleList := &model.ArticleList{
+	pbArticleList := &model.Articles{
 		ListOfArticles: protoArticles,
 	}
 	msgBuff, err := proto.Marshal(pbArticleList)
@@ -148,7 +148,7 @@ func TranscompileArticles(srcPath string, dstPath string) error {
 	return nil
 }
 
-func EnumerateArticles(path string) ([]article.Article, error) {
+func EnumerateArticles(path string) ([]*article.Article, error) {
 	whitelist := []string{
 		"README.md",
 		".git",
@@ -156,13 +156,16 @@ func EnumerateArticles(path string) ([]article.Article, error) {
 	}
 
 	type meta struct {
-		Title     string   `json:"title"`
-		Tags      []string `json:"tags"`
-		Timestamp string   `json:"timestamp"`
-		Path      string
+		Title             string   `json:"title"`
+		Tags              []string `json:"tags"`
+		FriendlyUrl       string   `json:"friendly_url"`
+		CreationTimestamp uint64   `json:"timestamp"`
+		MetaDescription   string   `json:"meta_description"`
+		Published         bool     `json:"published"`
+		Path              string
 	}
 
-	var al []article.Article
+	var al []*article.Article
 	var ml []meta
 
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
@@ -188,14 +191,20 @@ func EnumerateArticles(path string) ([]article.Article, error) {
 		if fileName == "metadata" {
 			content, err := Read(path)
 			if err != nil {
+				l.Error().Msg(fmt.Sprintf("Error reading file [EnumerateArticles]: %s", err.Error()))
 				return err
 			}
+			l.Debug().Msg(fmt.Sprintf("Successfully read file [EnumerateArticles]: %s", path))
 
 			var res meta
 			err = json.Unmarshal(content, &res)
-			l.Debug().Msg(dirName)
+			if err != nil {
+				l.Error().Msg(fmt.Sprintf("Error unmarshaling JSON content [EnumerateArticles]: %s", err.Error()))
+				return err
+			}
+			l.Debug().Msg(fmt.Sprintf("Successfully unmarshal JSON content [EnumerateArticles]: %v", res))
+
 			res.Path, err = findFileByExtensionInDir(dirName, "html")
-			l.Debug().Msg(res.Path)
 			if err != nil {
 				return err
 			}
@@ -208,16 +217,10 @@ func EnumerateArticles(path string) ([]article.Article, error) {
 		return nil, err
 	}
 	//translate meta into article
-	for _, item := range ml {
-		a := article.Article{
-			Title: item.Title,
-			Url:   item.Path,
-			Tags:  item.Tags,
-		}
-
+	for _, metaItem := range ml {
+		a := article.New(metaItem.Title, metaItem.Path, metaItem.Tags, metaItem.FriendlyUrl, metaItem.CreationTimestamp, metaItem.MetaDescription, metaItem.Published)
 		al = append(al, a)
 	}
-	fmt.Println(al)
 
 	return al, nil
 }
