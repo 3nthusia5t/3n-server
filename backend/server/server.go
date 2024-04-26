@@ -28,18 +28,18 @@ func LoadArticlesToMemory(DbManager *sqlite.DbManager) {
 }
 
 // update the tls part
-func ServeApp(staticContentPath string, imagesContentPath string, externalContentPath string, databasePath string, tlsCertPath string, tlsKeyPath string) {
+func ServeApp(staticContentPath string, imagesContentPath string, externalContentPath string, databasePath string, tlsCertPath string, tlsKeyPath string, isDev *bool) {
 RESTART: // it's useful to be able to restart server. This is a label for goto statements
 
 	//check if cert exists
-	if _, err := os.Stat(tlsCertPath); os.IsNotExist(err) {
+	if _, err := os.Stat(tlsCertPath); os.IsNotExist(err) && !*isDev {
 		l.Warn().Msg("Cert not found, retrying in 5 minutes")
 		time.Sleep(5 * time.Minute)
 		goto RESTART
 	}
 
 	//check if key exists
-	if _, err := os.Stat(tlsKeyPath); os.IsNotExist(err) {
+	if _, err := os.Stat(tlsKeyPath); os.IsNotExist(err) && !*isDev {
 		time.Sleep(5 * time.Minute)
 		goto RESTART
 	}
@@ -57,7 +57,7 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 	gArticles, err = DbManager.GetArticles()
 	go LoadArticlesToMemory(DbManager)
 	if err != nil {
-		l.Err(err)
+		l.Error().Msg(err.Error())
 	}
 
 	//Serving static website
@@ -71,20 +71,26 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 	http.HandleFunc("/GetChosenArticle", GetChosenArticleHandler(DbManager))
 
 	//Starting the server
-	l.Err(http.ListenAndServeTLS(":https", tlsCertPath, tlsKeyPath, nil))
+	http.ListenAndServe(":http", nil)
+	//l.Err(http.ListenAndServeTLS(":https", tlsCertPath, tlsKeyPath, nil))
 }
 
 func UpdateApp(articleContentPath string, databasePath string) {
 	//Enumarate articles and find new
 	al, err := EnumerateArticles(articleContentPath)
+	l.Info().Msg(fmt.Sprintf("%v", al))
 	if err != nil {
 		l.Error().Msg(err.Error())
 	}
 	l.Debug().Msg(fmt.Sprintf("Successfully enumerated articles [UpdateApp]: %v", al))
 
 	DbManager := sqlite.Init(databasePath)
-
 	for _, a := range al {
+		fmt.Println(a.FriendlyUrl)
+		/*
+			We're checking URL instead of UUID, because the metadata files in 3n-articles doesn't contain uuid.
+			Therefore UUID is completely random and doesn't relate to the one that is already stored in database.
+		*/
 		if DbManager.IfUrlExist(*a) {
 			//EditTimestamp assignment inside the function
 			DbManager.UpdateRecord(a)

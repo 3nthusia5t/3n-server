@@ -58,8 +58,14 @@ func GetChosenArticleHandler(db *sqlite.DbManager) func(w http.ResponseWriter, r
 }
 
 func GetAllArticlesHandler(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Access-Control-Allow-Origin", "*")
-	//w.Header().Set("Access-Control-Allow-Headers", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+
+	if r.Method == "OPTIONS" {
+		w.Header().Set("Access-Control-Allow-Methods", "GET")
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 
 	msg, err := SerializeArticles(gArticles)
 	if err != nil {
@@ -68,12 +74,6 @@ func GetAllArticlesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/octet-stream")
-
-	if r.Method == "OPTIONS" {
-		w.Header().Set("Access-Control-Allow-Methods", "GET")
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
 
 	if r.Method != "GET" {
 		http.Error(w, "Wrong method", http.StatusMethodNotAllowed)

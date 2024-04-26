@@ -17,11 +17,22 @@ func SerializeArticles(articles []*article.Article) ([]byte, error) {
 	var serializedMessage []byte
 	var protoArticles []*model.Article
 	for _, elem := range articles {
+
+		if !elem.Published {
+			continue
+		}
+
+		tempEditTimestamp := int64(*elem.EditTimestamp)
 		article := &model.Article{
-			Uuid:  elem.Uuid,
-			Title: elem.Title,
-			Url:   elem.Url,
-			Tags:  elem.TagsToCsv(),
+			Uuid:              elem.Uuid,
+			Title:             elem.Title,
+			Url:               elem.Url,
+			Tags:              elem.TagsToCsv(),
+			FriendlyUrl:       elem.FriendlyUrl,
+			CreationTimestamp: int64(elem.CreationTimestamp),
+			EditTimestamp:     &tempEditTimestamp,
+			MetaDescription:   elem.MetaDescription,
+			Published:         elem.Published,
 		}
 		protoArticles = append(protoArticles, article)
 	}

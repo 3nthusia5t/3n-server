@@ -72,7 +72,7 @@ func (db *DbManager) GetArticlePath(uuid string) (string, error) {
 func (db *DbManager) GetArticles() ([]*article.Article, error) {
 	var articles []*article.Article
 
-	rows, err := db.db.Query("SELECT * FROM articles")
+	rows, err := db.db.Query("SELECT id, title, url, tags, friendly_url, creation_timestamp, edit_timestamp, meta_description, published FROM articles")
 	for rows.Next() {
 
 		var title, url, uuid, friendlyUrl, tags string
@@ -80,12 +80,12 @@ func (db *DbManager) GetArticles() ([]*article.Article, error) {
 		var editTimestamp *uint64
 		var metaDescription *string
 		var published bool
-		if err := rows.Scan(&uuid, &title, &url, &tags, &friendlyUrl, &creationTimestamp, &editTimestamp, &metaDescription); err != nil {
+		if err := rows.Scan(&uuid, &title, &url, &tags, &friendlyUrl, &creationTimestamp, &editTimestamp, &metaDescription, &published); err != nil {
 			return nil, err
 		}
 
 		a := article.NewFromScratch(uuid, title, url, article.CsvToTags(tags), friendlyUrl, creationTimestamp, editTimestamp, metaDescription, published)
-		if a != nil {
+		if a == nil {
 			l.Warn().Msg("Failed to create new article. Most likely due to UUID error. The article will be omitted")
 			continue
 		}
@@ -140,28 +140,32 @@ func (db *DbManager) IfRowExist(a article.Article) bool {
 
 func (db *DbManager) UpdateRecord(a *article.Article) error {
 
-	row := db.db.QueryRow("SELECT id FROM articles WHERE url == ?", a.Url)
-	l.Debug().Msg("Querying database to check if url exists in any row. [UpdateRecord]")
+	row := db.db.QueryRow("SELECT id FROM articles WHERE url = ?", a.Url)
 	var uuid string
 	err := row.Scan(&uuid)
+	l.Debug().Msg(fmt.Sprintf("Updating the record with UUID %s [UpdateRecord]", uuid))
+
 	if err != nil {
 		l.Debug().Msg(fmt.Sprintf("Error raised during scanning rows: %s. [UpdateRecord]", err.Error()))
 		return err
 	}
 
+	fmt.Println(a.FriendlyUrl)
+
 	updatedEditTimestamp := uint64(time.Now().Unix())
 	a.EditTimestamp = &updatedEditTimestamp
-
+	fmt.Println(uuid)
+	fmt.Println(a.Uuid)
 	res, err := db.db.Exec(`
 	UPDATE articles
-	SET title = ?;
-		url = ?;
-		tags = ?;
-		friendly_url = ?;
-		creation_timestamp = ?;
-		edit_timestamp = ?;
-		meta_description = ?;
-		published = ?;
+	SET title = ?,
+		url = ?,
+		tags = ?,
+		friendly_url = ?,
+		creation_timestamp = ?,
+		edit_timestamp = ?,
+		meta_description = ?,
+		published = ?,
 		integrity_hash = ?
 	WHERE
 		id = ?`,
@@ -174,14 +178,16 @@ func (db *DbManager) UpdateRecord(a *article.Article) error {
 		a.MetaDescription,
 		a.Published,
 		a.IntegrityHash,
-		a.Uuid,
+		uuid,
 	)
 	if err != nil {
+		l.Debug().Msg(err.Error())
 		return err
 	}
-	l.Debug().Msg(fmt.Sprintf("Record was created: %s", a.DebugPrint()))
+	l.Debug().Msg(fmt.Sprintf("Record was updated: %s", a.DebugPrint()))
 	//The RowsAffected always return nil for error.
 	nAffected, _ := res.RowsAffected()
+	fmt.Println(nAffected)
 	if nAffected > 1 {
 		l.Warn().Msg(fmt.Sprintf("More than 1 record was created: %s", a.DebugPrint()))
 	}

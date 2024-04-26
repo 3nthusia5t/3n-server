@@ -5,3 +5,5 @@ backend/main.exe
 backend/3n-server.exe
 3n.tar
 protoc.exe
+backend/start_dev.bat
+backend/update_dev.bat

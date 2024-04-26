@@ -1,9 +1,9 @@
 FROM golang:1.20
 
 
-ENV APP_REPO "https://github.com/3nthusiast/3n-app.git"
-ENV SERVER_REPO "https://github.com/3nthusiast/3n-server.git"
-ENV ARTICLES_REPO "https://github.com/3nthusiast/3n-articles.git"
+ENV APP_REPO "https://"${APP_TOKEN}"@github.com/3nthusia5t/3n-app.git"
+ENV SERVER_REPO "https://"${APP_TOKEN}"@github.com/3nthusia5t/3n-server.git"
+ENV ARTICLES_REPO "https://"${APP_TOKEN}"@github.com/3nthusia5t/3n-articles.git"
 
 # Install tools
 RUN apt-get update
