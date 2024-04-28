@@ -13,6 +13,7 @@ import (
 // GLOBAL VARS
 var l = log.Logger.With().Str("component", "server").Logger()
 var gArticles []*article.Article
+var IsDev bool = false
 
 func LoadArticlesToMemory(DbManager *sqlite.DbManager) {
 	for {
@@ -31,15 +32,18 @@ func LoadArticlesToMemory(DbManager *sqlite.DbManager) {
 func ServeApp(staticContentPath string, imagesContentPath string, externalContentPath string, databasePath string, tlsCertPath string, tlsKeyPath string, isDev *bool) {
 RESTART: // it's useful to be able to restart server. This is a label for goto statements
 
+	//make it global scope, so other packages can also use it.
+	IsDev = *isDev
+
 	//check if cert exists
-	if _, err := os.Stat(tlsCertPath); os.IsNotExist(err) && !*isDev {
+	if _, err := os.Stat(tlsCertPath); os.IsNotExist(err) && !IsDev {
 		l.Warn().Msg("Cert not found, retrying in 5 minutes")
 		time.Sleep(5 * time.Minute)
 		goto RESTART
 	}
 
 	//check if key exists
-	if _, err := os.Stat(tlsKeyPath); os.IsNotExist(err) && !*isDev {
+	if _, err := os.Stat(tlsKeyPath); os.IsNotExist(err) && !IsDev {
 		time.Sleep(5 * time.Minute)
 		goto RESTART
 	}

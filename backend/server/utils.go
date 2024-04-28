@@ -133,7 +133,7 @@ func TranscompileArticles(srcPath string, dstPath string) error {
 				return err
 			}
 			htmlContent := mdToHTML(content)
-			l.Debug().Msg(fmt.Sprintf("Transcompilating the markdown into HTML completed. [TranscompileArticles]"))
+			l.Debug().Msg("Transcompilating the markdown into HTML completed. [TranscompileArticles]")
 			outputFile := changeFileExtension(path, "html")
 			l.Debug().Msg(fmt.Sprintf("HTML file - %s will be created. [TranscompileArticles]", outputFile))
 			err = Write(outputFile, htmlContent)
