@@ -102,7 +102,7 @@ func init() {
 	transcompileCmd.Flags().StringVarP(&dstTranscompilePath, "dst", "", "/app/3n-articles/html/", "Path to the destination for HTML articles.")
 	rootCmd.PersistentFlags().StringVarP(&tlsCertPath, "cert", "", "/app/cert.pem", "Provide the path to the TLS certificate")
 	rootCmd.PersistentFlags().StringVarP(&tlsKeyPath, "key", "", "/app/key.pem", "Provide the path to the TLS key")
-	isDev = rootCmd.PersistentFlags().Bool("dev", true, "Debugging")
+	isDev = rootCmd.PersistentFlags().Bool("dev", false, "Debugging")
 
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(transcompileCmd)
