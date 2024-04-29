@@ -52,7 +52,6 @@ func GetChosenArticleHandler(db *sqlite.DbManager) func(w http.ResponseWriter, r
 		}
 		path, err := db.GetArticlePath(article.Uuid)
 		if err != nil {
-			l.Warn().Msg(fmt.Sprintf("Possible SQL injection. Input %s", path))
 			l.Err(err)
 			return
 		}

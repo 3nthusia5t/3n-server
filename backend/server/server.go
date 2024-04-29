@@ -75,8 +75,8 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 	http.HandleFunc("/GetChosenArticle", GetChosenArticleHandler(DbManager))
 
 	//Starting the server
-	http.ListenAndServe(":http", nil)
-	//l.Err(http.ListenAndServeTLS(":https", tlsCertPath, tlsKeyPath, nil))
+	l.Err(http.ListenAndServe(":http", http.HandlerFunc(redirectToHTTPS)))
+	l.Err(http.ListenAndServeTLS(":https", tlsCertPath, tlsKeyPath, nil))
 }
 
 func UpdateApp(articleContentPath string, databasePath string) {
