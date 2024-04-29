@@ -75,7 +75,7 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 	http.HandleFunc("/GetChosenArticle", GetChosenArticleHandler(DbManager))
 
 	//Starting the server
-	l.Err(http.ListenAndServe(":http", http.HandlerFunc(redirectToHTTPS))).Msg("HTTP server error")
+	go http.ListenAndServe(":http", http.HandlerFunc(redirectToHTTPS))
 	l.Err(http.ListenAndServeTLS(":https", tlsCertPath, tlsKeyPath, nil)).Msg("HTTPS server error")
 }
 
