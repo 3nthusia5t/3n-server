@@ -10,23 +10,26 @@ import (
 func GetChosenArticleHandler(db *sqlite.DbManager) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		if IsDev {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Headers", "*")
 
-		w.Header().Set("Access-Control-Allow-Headers", "*")
-		if r.URL.Path != "/GetChosenArticle" {
-			http.Error(w, "403 not found", http.StatusNotFound)
-		}
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+			if r.URL.Path != "/GetChosenArticle" {
+				http.Error(w, "403 not found", http.StatusNotFound)
+			}
 
-		if r.Method == "OPTIONS" {
-			w.Header().Set("Access-Control-Allow-Methods", "POST")
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
+			if r.Method == "OPTIONS" {
+				w.Header().Set("Access-Control-Allow-Methods", "POST")
+				w.WriteHeader(http.StatusNoContent)
+				return
+			}
 
-		if r.Method != "POST" {
-			http.Error(w, "Bad method", http.StatusBadRequest)
-			l.Err(fmt.Errorf("the request had wrong method %s", r.Method))
-			return
+			if r.Method != "POST" {
+				http.Error(w, "Bad method", http.StatusBadRequest)
+				l.Err(fmt.Errorf("the request had wrong method %s", r.Method))
+				return
+			}
+
 		}
 
 		//What happens when message will be bigger that 1024bytes?
@@ -42,13 +45,13 @@ func GetChosenArticleHandler(db *sqlite.DbManager) func(w http.ResponseWriter, r
 
 		article, err := UnserializeArticle(buff)
 		l.Debug().Msg(fmt.Sprintf("Successfully unserialized article %s", article.Title))
+
 		if err != nil {
 			l.Err(err)
 			return
 		}
 		path, err := db.GetArticlePath(article.Uuid)
 		if err != nil {
-			l.Warn().Msg(fmt.Sprintf("Possible SQL injection. Input %s", path))
 			l.Err(err)
 			return
 		}
@@ -58,8 +61,17 @@ func GetChosenArticleHandler(db *sqlite.DbManager) func(w http.ResponseWriter, r
 }
 
 func GetAllArticlesHandler(w http.ResponseWriter, r *http.Request) {
-	//w.Header().Set("Access-Control-Allow-Origin", "*")
-	//w.Header().Set("Access-Control-Allow-Headers", "*")
+	if IsDev {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+
+		if r.Method == "OPTIONS" {
+			w.Header().Set("Access-Control-Allow-Methods", "GET")
+			w.WriteHeader(http.StatusNoContent)
+			l.Debug().Msg(fmt.Sprintf("Handled CORS %s request", r.Method))
+			return
+		}
+	}
 
 	msg, err := SerializeArticles(gArticles)
 	if err != nil {
@@ -67,13 +79,9 @@ func GetAllArticlesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/octet-stream")
+	l.Debug().Msg(fmt.Sprintf("Serialized given articles successfuly: %v [GetAllArticlesHandler]", gArticles))
 
-	if r.Method == "OPTIONS" {
-		w.Header().Set("Access-Control-Allow-Methods", "GET")
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
+	w.Header().Set("Content-Type", "application/octet-stream")
 
 	if r.Method != "GET" {
 		http.Error(w, "Wrong method", http.StatusMethodNotAllowed)

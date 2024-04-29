@@ -27,6 +27,7 @@ var srcTranscompilePath string
 var dstTranscompilePath string
 var tlsCertPath string
 var tlsKeyPath string
+var isDev *bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -40,7 +41,7 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		l.Info().Msg("Starting Backend Service")
-		server.ServeApp(staticContentPath, imageContentPath, externalContentPath, databasePath, tlsCertPath, tlsKeyPath)
+		server.ServeApp(staticContentPath, imageContentPath, externalContentPath, databasePath, tlsCertPath, tlsKeyPath, isDev)
 		l.Info().Msg("Backend Service started successfully")
 	},
 }
@@ -101,6 +102,7 @@ func init() {
 	transcompileCmd.Flags().StringVarP(&dstTranscompilePath, "dst", "", "/app/3n-articles/html/", "Path to the destination for HTML articles.")
 	rootCmd.PersistentFlags().StringVarP(&tlsCertPath, "cert", "", "/app/cert.pem", "Provide the path to the TLS certificate")
 	rootCmd.PersistentFlags().StringVarP(&tlsKeyPath, "key", "", "/app/key.pem", "Provide the path to the TLS key")
+	isDev = rootCmd.PersistentFlags().Bool("dev", true, "Debugging")
 
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(transcompileCmd)
