@@ -22,7 +22,7 @@ jobs:
         go-version: '1.20'
 
     - name: Build
-      run: cd backend; go build main.go
+      run: cd backend && go build main.go
 
     - name: Test
-      run: cd backend; go test -v ./...
+      run: cd backend && go test -v ./...
