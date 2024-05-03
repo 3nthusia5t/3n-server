@@ -153,3 +153,7 @@ func redirectToHTTPS(w http.ResponseWriter, r *http.Request) {
 	// Redirect to the HTTPS version
 	http.Redirect(w, r, url, http.StatusMovedPermanently)
 }
+
+func Test(staticContentPath string, imagesContentPath string, externalContentPath string) {
+	return
+}
