@@ -74,9 +74,38 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 	http.HandleFunc("/GetAllArticles", GetAllArticlesHandler)
 	http.HandleFunc("/GetChosenArticle", GetChosenArticleHandler(DbManager))
 
-	//Starting the server
-	go http.ListenAndServe(":http", http.HandlerFunc(redirectToHTTPS))
-	l.Err(http.ListenAndServeTLS(":https", tlsCertPath, tlsKeyPath, nil)).Msg("HTTPS server error")
+	httpDone := make(chan struct{})
+
+	if !IsDev {
+		go ServeHttp(httpDone, http.HandlerFunc(redirectToHTTPS))
+	} else {
+		go ServeHttp(httpDone, nil)
+	}
+
+	if !IsDev {
+		go ServeHttps(httpDone, tlsCertPath, tlsKeyPath)
+	}
+
+	<-httpDone
+}
+
+func ServeHttp(done chan struct{}, handler http.Handler) {
+	defer close(done)
+	err := http.ListenAndServe(":http", handler)
+	if err != nil {
+		l.Err(err).Msg("HTTP server error")
+	}
+	done <- struct{}{}
+}
+
+// ServeHttps starts and serves the HTTPS server
+func ServeHttps(done chan struct{}, tlsCertPath string, tlsKeyPath string) {
+	defer close(done)
+	err := http.ListenAndServeTLS(":https", tlsCertPath, tlsKeyPath, nil)
+	if err != nil {
+		l.Err(err).Msg("HTTPS server error")
+	}
+	done <- struct{}{}
 }
 
 func UpdateApp(articleContentPath string, databasePath string) {
@@ -123,8 +152,4 @@ func redirectToHTTPS(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect to the HTTPS version
 	http.Redirect(w, r, url, http.StatusMovedPermanently)
-}
-
-func Test(staticContentPath string, imagesContentPath string, externalContentPath string) {
-	return
 }
