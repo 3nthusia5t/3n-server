@@ -36,11 +36,11 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 	IsDev = *isDev
 
 	//check if cert exists
-	if _, err := os.Stat(tlsCertPath); os.IsNotExist(err) && !IsDev {
-		l.Warn().Msg("Cert not found, retrying in 5 minutes")
-		time.Sleep(5 * time.Minute)
-		goto RESTART
-	}
+	//if _, err := os.Stat(tlsCertPath); os.IsNotExist(err) && !IsDev {
+	//	l.Warn().Msg("Cert not found, retrying in 5 minutes")
+	//	time.Sleep(5 * time.Minute)
+	//	goto RESTART
+	//}
 
 	//check if key exists
 	if _, err := os.Stat(tlsKeyPath); os.IsNotExist(err) && !IsDev {
