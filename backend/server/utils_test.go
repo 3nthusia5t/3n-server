@@ -18,7 +18,7 @@ func TestEnumerateArticles(t *testing.T) {
 		{
 			name: "Check regular timestamp",
 			args: args{
-				path: "..\\..\\rsrc\\test_articles\\1",
+				path: "../../rsrc/test_articles/1",
 			},
 			want:    1713382077,
 			wantErr: false,
@@ -26,14 +26,14 @@ func TestEnumerateArticles(t *testing.T) {
 		{
 			name: "Check minus timestamp",
 			args: args{
-				path: "..\\..\\rsrc\\test_articles\\2",
+				path: "../../rsrc/test_articles/2",
 			},
 			wantErr: true,
 		},
 		{
 			name: "After 32bits are not enough...",
 			args: args{
-				path: "..\\..\\rsrc\\test_articles\\3",
+				path: "../../rsrc/test_articles/3",
 			},
 			want:    3426764154,
 			wantErr: false,
@@ -72,7 +72,7 @@ func TestEnumerateArticles2(t *testing.T) {
 		{
 			name: "Check optional field",
 			args: args{
-				path: "..\\..\\rsrc\\test_articles\\1",
+				path: "../../rsrc/test_articles/1",
 			},
 			want:    "In-depth analysis of Authenticode policy on Windows operating system. Hands-on example for creating self-signed certificate",
 			wantErr: false,
@@ -80,7 +80,7 @@ func TestEnumerateArticles2(t *testing.T) {
 		{
 			name: "Check missing optional field",
 			args: args{
-				path: "..\\..\\rsrc\\test_articles\\3",
+				path: "../../rsrc/test_articles/3",
 			},
 			want:    "",
 			wantErr: false,
