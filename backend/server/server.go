@@ -76,11 +76,7 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 
 	httpDone := make(chan struct{})
 
-	if !IsDev {
-		go ServeHttp(httpDone, http.HandlerFunc(redirectToHTTPS))
-	} else {
-		go ServeHttp(httpDone, nil)
-	}
+	ServeHttp(httpDone, nil)
 
 	if !IsDev {
 		go ServeHttps(httpDone, tlsCertPath, tlsKeyPath)
