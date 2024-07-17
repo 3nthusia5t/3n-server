@@ -6,7 +6,6 @@ import (
 	"backend/sqlite"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -43,10 +42,10 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 	//}
 
 	//check if key exists
-	if _, err := os.Stat(tlsKeyPath); os.IsNotExist(err) && !IsDev {
-		time.Sleep(5 * time.Minute)
-		goto RESTART
-	}
+	//if _, err := os.Stat(tlsKeyPath); os.IsNotExist(err) && !IsDev {
+	//	time.Sleep(5 * time.Minute)
+	//	goto RESTART
+	//}
 
 	//initialize the database
 	DbManager := sqlite.Init(databasePath)
@@ -77,7 +76,7 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 	httpDone := make(chan struct{})
 
 	ServeHttp(httpDone, nil)
-
+	goto RESTART
 	if !IsDev {
 		go ServeHttps(httpDone, tlsCertPath, tlsKeyPath)
 	}
