@@ -72,7 +72,7 @@ func (db *DbManager) GetArticlePath(uuid string) (string, error) {
 func (db *DbManager) GetArticles() ([]*article.Article, error) {
 	var articles []*article.Article
 
-	rows, err := db.db.Query("SELECT id, title, url, tags, friendly_url, creation_timestamp, edit_timestamp, meta_description, published FROM articles")
+	rows, err := db.db.Query("SELECT id, title, url, tags, friendly_url, creation_timestamp, edit_timestamp, meta_description, published FROM articles ORDER BY creation_timestamp DESC")
 	for rows.Next() {
 
 		var title, url, uuid, friendlyUrl, tags string

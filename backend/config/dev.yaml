@@ -1,0 +1,24 @@
+# config.yaml
+
+# Paths for the content
+content: "../../3n-app/build"
+
+# Path for images (not specified in the command line, setting to default)
+img: "/app/3n-articles/html/images/"
+
+# Path for articles
+article: "../../3n-articles/markdown/"
+
+# Path for the database
+database: "./database.db"
+
+# TLS configuration (not specified in the command line, setting to default)
+cert: "/app/cert.pem"
+key: "/app/key.pem"
+
+# Development mode flag (not specified in the command line, setting to default)
+dev: false
+
+# Transcompilation paths (not specified in the command line, setting to default)
+src: "/app/3n-articles/markdown/"
+dst: "/app/3n-articles/html/"

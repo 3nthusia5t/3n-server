@@ -29,26 +29,14 @@ func LoadArticlesToMemory(DbManager *sqlite.DbManager) {
 
 // update the tls part
 func ServeApp(staticContentPath string, imagesContentPath string, externalContentPath string, databasePath string, tlsCertPath string, tlsKeyPath string, isDev *bool) {
-RESTART: // it's useful to be able to restart server. This is a label for goto statements
+	// it's useful to be able to restart server. This is a label for goto statements
 
 	//make it global scope, so other packages can also use it.
 	IsDev = *isDev
 
-	//check if cert exists
-	//if _, err := os.Stat(tlsCertPath); os.IsNotExist(err) && !IsDev {
-	//	l.Warn().Msg("Cert not found, retrying in 5 minutes")
-	//	time.Sleep(5 * time.Minute)
-	//	goto RESTART
-	//}
-
-	//check if key exists
-	//if _, err := os.Stat(tlsKeyPath); os.IsNotExist(err) && !IsDev {
-	//	time.Sleep(5 * time.Minute)
-	//	goto RESTART
-	//}
-
 	//initialize the database
 	DbManager := sqlite.Init(databasePath)
+	l.Info().Msg(fmt.Sprintf("database path: %s", databasePath))
 	if DbManager == nil {
 		l.Fatal().Msg("Failed to initialize the database")
 
@@ -75,11 +63,7 @@ RESTART: // it's useful to be able to restart server. This is a label for goto s
 
 	httpDone := make(chan struct{})
 
-	ServeHttp(httpDone, nil)
-	goto RESTART
-	if !IsDev {
-		go ServeHttps(httpDone, tlsCertPath, tlsKeyPath)
-	}
+	go ServeHttp(httpDone, nil)
 
 	<-httpDone
 }

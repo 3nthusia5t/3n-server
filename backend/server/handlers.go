@@ -56,7 +56,7 @@ func GetChosenArticleHandler(db *sqlite.DbManager) func(w http.ResponseWriter, r
 			return
 		}
 		http.ServeFile(w, r, path)
-		l.Info().Msg(fmt.Sprintf("Request from IP %s has been handled successfully [GetChosenArticleHandler]", r.RemoteAddr))
+		l.Info().Msg("Request has been handled successfully [GetChosenArticleHandler]")
 	}
 }
 
@@ -85,17 +85,17 @@ func GetAllArticlesHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "GET" {
 		http.Error(w, "Wrong method", http.StatusMethodNotAllowed)
-		l.Err(fmt.Errorf("request from IP %s has wrong method", r.RemoteAddr))
+		l.Err(fmt.Errorf("request has wrong method"))
 		return
 	}
 
 	bWritten, err := w.Write(msg)
-	l.Info().Msg(fmt.Sprintf("Response for IP %s with %d bytes of size has been sent. [GetAllArticlesHandler]", r.RemoteAddr, bWritten))
+	l.Info().Msg(fmt.Sprintf("Response with %d bytes of size has been sent. [GetAllArticlesHandler]", bWritten))
 	if err != nil {
 		l.Err(err)
 		return
 	}
-	l.Info().Msg(fmt.Sprintf("Request from IP %s has been handled successfully", r.RemoteAddr))
+	l.Info().Msg("Request has been handled successfully")
 }
 
 /*
