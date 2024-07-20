@@ -95,28 +95,6 @@ func init() {
 
 	isDev = rootCmd.PersistentFlags().Bool("dev", false, "Debugging")
 
-	//Viper binds
-	viper.BindPFlag("content", rootCmd.Flags().Lookup("content"))
-	viper.BindPFlag("img", rootCmd.Flags().Lookup("img"))
-	viper.BindPFlag("article", rootCmd.Flags().Lookup("article"))
-	viper.BindPFlag("database", rootCmd.Flags().Lookup("database"))
-	viper.BindPFlag("cert", rootCmd.Flags().Lookup("cert"))
-	viper.BindPFlag("key", rootCmd.Flags().Lookup("key"))
-	viper.BindPFlag("dev", rootCmd.Flags().Lookup("dev"))
-	viper.BindPFlag("src", transcompileCmd.Flags().Lookup("src"))
-	viper.BindPFlag("dst", transcompileCmd.Flags().Lookup("dst"))
-
-	//Viper assings
-	staticContentPath = viper.GetString("content")
-	imageContentPath = viper.GetString("img")
-	articleContentPath = viper.GetString("article")
-	databasePath = viper.GetString("database")
-	tlsCertPath = viper.GetString("cert")
-	tlsKeyPath = viper.GetString("key")
-	*isDev = viper.GetBool("dev")
-	srcTranscompilePath = viper.GetString("src")
-	dstTranscompilePath = viper.GetString("dst")
-
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(transcompileCmd)
 	// Cobra also supports local flags, which will only run
@@ -144,5 +122,27 @@ func initConfig() {
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+
+		//Viper binds
+		viper.BindPFlag("content", rootCmd.Flags().Lookup("content"))
+		viper.BindPFlag("img", rootCmd.Flags().Lookup("img"))
+		viper.BindPFlag("article", rootCmd.Flags().Lookup("article"))
+		viper.BindPFlag("database", rootCmd.Flags().Lookup("database"))
+		viper.BindPFlag("cert", rootCmd.Flags().Lookup("cert"))
+		viper.BindPFlag("key", rootCmd.Flags().Lookup("key"))
+		viper.BindPFlag("dev", rootCmd.Flags().Lookup("dev"))
+		viper.BindPFlag("src", transcompileCmd.Flags().Lookup("src"))
+		viper.BindPFlag("dst", transcompileCmd.Flags().Lookup("dst"))
+
+		//Viper assings
+		staticContentPath = viper.GetString("content")
+		imageContentPath = viper.GetString("img")
+		articleContentPath = viper.GetString("article")
+		databasePath = viper.GetString("database")
+		tlsCertPath = viper.GetString("cert")
+		tlsKeyPath = viper.GetString("key")
+		*isDev = viper.GetBool("dev")
+		srcTranscompilePath = viper.GetString("src")
+		dstTranscompilePath = viper.GetString("dst")
 	}
 }
