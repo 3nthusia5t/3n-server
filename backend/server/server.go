@@ -57,6 +57,7 @@ func ServeApp(staticContentPath string, imagesContentPath string, externalConten
 	http.Handle("/", http.StripPrefix("/", staticServer))
 	http.Handle("/images/", http.StripPrefix("/images/", imgServer))
 
+	print("TESTING logs")
 	http.HandleFunc("/sitemap.xml", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "/app/sitemap.xml")
 	})
