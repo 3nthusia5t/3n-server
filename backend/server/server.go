@@ -57,6 +57,10 @@ func ServeApp(staticContentPath string, imagesContentPath string, externalConten
 	http.Handle("/", http.StripPrefix("/", staticServer))
 	http.Handle("/images/", http.StripPrefix("/images/", imgServer))
 
+	http.HandleFunc("/sitemap.xml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "sitemap.xml")
+	})
+
 	//Handling API calls
 	http.HandleFunc("/GetAllArticles", GetAllArticlesHandler)
 	http.HandleFunc("/GetChosenArticle", GetChosenArticleHandler(DbManager))
